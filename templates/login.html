@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DonorConnect - Admin Login</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <style>
+      :root {
+        --bg-dark: #020617;
+        --bg-card: #0f172a;
+        --bg-card-2: #111827;
+        --gold: #fbbf24;
+        --gold-hover: #f59e0b;
+        --white: #ffffff;
+        --text: #cbd5e1;
+        --border: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", "Segoe UI", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        overflow: hidden;
+
+        background: radial-gradient(
+            circle at top left,
+            #1e293b 0%,
+            transparent 35%
+          ),
+          radial-gradient(circle at bottom right, #1d4ed8 0%, transparent 30%),
+          linear-gradient(135deg, #020617, #0f172a, #111827);
+      }
+
+      .login-container {
+        width: 1150px;
+        max-width: 100%;
+        min-height: 650px;
+
+        background: rgba(255, 255, 255, 0.04);
+
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+
+        border: 1px solid rgba(255, 255, 255, 0.08);
+
+        border-radius: 32px;
+
+        overflow: hidden;
+
+        display: flex;
+
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45),
+          0 0 60px rgba(37, 99, 235, 0.15);
+      }
+
+      /* LEFT PANEL */
+
+      .left-panel {
+        width: 50%;
+
+        background: linear-gradient(160deg, #0f172a, #111827, #1e293b);
+
+        color: white;
+
+        padding: 60px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        position: relative;
+      }
+
+      .left-panel::before {
+        content: "";
+
+        position: absolute;
+
+        width: 350px;
+        height: 350px;
+
+        background: rgba(251, 191, 36, 0.08);
+
+        border-radius: 50%;
+
+        top: -120px;
+        left: -120px;
+
+        filter: blur(40px);
+      }
+
+      .logo {
+        font-size: 55px;
+        color: var(--gold);
+        margin-bottom: 20px;
+      }
+
+      .left-panel h1 {
+        font-size: 56px;
+        font-weight: 800;
+        color: var(--white);
+        margin-bottom: 15px;
+      }
+
+      .left-panel p {
+        color: var(--text);
+        font-size: 18px;
+        line-height: 1.8;
+        margin-bottom: 40px;
+      }
+
+      .feature {
+        display: flex;
+        align-items: center;
+
+        margin-bottom: 18px;
+
+        font-size: 18px;
+
+        padding: 12px 16px;
+
+        border-radius: 12px;
+
+        background: rgba(255, 255, 255, 0.04);
+
+        border: 1px solid rgba(255, 255, 255, 0.05);
+
+        transition: 0.3s;
+      }
+
+      .feature:hover {
+        transform: translateX(6px);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .feature i {
+        width: 35px;
+        color: var(--gold);
+        font-size: 20px;
+      }
+
+      /* RIGHT PANEL */
+
+      .right-panel {
+        width: 50%;
+
+        background: white;
+
+        padding: 70px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .right-panel h2 {
+        text-align: center;
+        font-size: 48px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #64748b;
+        font-size: 16px;
+        margin-bottom: 40px;
+      }
+
+      .input-group {
+        margin-bottom: 22px;
+      }
+
+      .input-group-text {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+      }
+
+      .form-control {
+        height: 58px;
+        border: 1px solid #e2e8f0;
+        font-size: 16px;
+      }
+
+      .form-control:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
+      }
+
+      .btn-login {
+        width: 100%;
+        height: 58px;
+
+        border: none;
+
+        border-radius: 14px;
+
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+
+        color: #111827;
+
+        font-size: 18px;
+        font-weight: 700;
+
+        transition: 0.3s;
+      }
+
+      .btn-login:hover {
+        transform: translateY(-3px);
+
+        box-shadow: 0 15px 30px rgba(245, 158, 11, 0.35);
+      }
+
+      .footer-text {
+        margin-top: 30px;
+        text-align: center;
+        color: #64748b;
+        font-size: 14px;
+      }
+
+      /* RESPONSIVE */
+
+      @media (max-width: 900px) {
+        body {
+          padding: 15px;
+        }
+
+        .login-container {
+          flex-direction: column;
+        }
+
+        .left-panel,
+        .right-panel {
+          width: 100%;
+        }
+
+        .left-panel {
+          padding: 40px;
+        }
+
+        .right-panel {
+          padding: 40px;
+        }
+
+        .left-panel h1 {
+          font-size: 40px;
+        }
+
+        .right-panel h2 {
+          font-size: 36px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <!-- LEFT SIDE -->
+
+      <div class="left-panel">
+        <div class="logo">
+          <i class="fa-solid fa-hand-holding-heart"></i>
+        </div>
+
+        <h1>DonorConnect</h1>
+        <p>
+          Enterprise Crowdfunding Cloud Platform powered by AWS Infrastructure.
+        </p>
+
+        <p>Cloud Based Crowdfunding & Donation Management Platform</p>
+
+        <div class="feature">
+          <i class="fa-solid fa-server"></i>
+          AWS EC2 Deployment
+        </div>
+
+        <div class="feature">
+          <i class="fa-solid fa-database"></i>
+          RDS MySQL Database
+        </div>
+
+        <div class="feature">
+          <i class="fa-solid fa-cloud"></i>
+          AWS S3 Storage
+        </div>
+
+        <div class="feature">
+          <i class="fa-solid fa-chart-line"></i>
+          CloudWatch Monitoring
+        </div>
+
+        <div class="feature">
+          <i class="fa-brands fa-docker"></i>
+          Docker Containerization
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE -->
+
+      <div class="right-panel">
+        <h2>Welcome Back</h2>
+
+        <p class="subtitle">Sign in to manage donors & campaigns</p>
+
+        <form method="POST" action="/login">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fa-solid fa-user"></i>
+            </span>
+
+            <input
+              type="text"
+              name="admin_id"
+              class="form-control"
+              placeholder="Admin ID"
+              required
+            />
+          </div>
+
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+
+            <input
+              type="password"
+              name="password"
+              class="form-control"
+              placeholder="Password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn-login">Login</button>
+        </form>
+        <div class="footer-text">DonorConnect Crowdfunding Cloud Platform</div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Reports Dashboard</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        display: flex;
+        min-height: 100vh;
+        background: #f4f7fc;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: #0f172a;
+        color: white;
+        padding: 30px;
+      }
+
+      .sidebar h2 {
+        margin-bottom: 40px;
+        color: #fbbf24;
+      }
+
+      .menu-item {
+        display: block;
+        text-decoration: none;
+        color: white;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        transition: 0.3s;
+      }
+
+      .menu-item:hover {
+        background: #1e293b;
+      }
+
+      /* Main Content */
+      .main {
+        flex: 1;
+        padding: 30px;
+        /* Added flex column to push footer to the bottom naturally */
+        display: flex;
+        flex-direction: column; 
+      }
+
+      .header {
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        color: #1e293b;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #64748b;
+      }
+
+      /* Cards */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+        margin-bottom: 30px; /* Added margin to push against the footer */
+      }
+
+      .card {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .card h3 {
+        color: #64748b;
+        margin-bottom: 15px;
+      }
+
+      .card p {
+        font-size: 34px;
+        font-weight: bold;
+        color: #2563eb;
+      }
+
+      /* New Footer CSS */
+      .footer {
+        margin-top: auto; /* Pushes the footer to the bottom of .main */
+        background: #0f172a;
+        color: white;
+        border-radius: 15px;
+        padding: 25px 40px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .footer h3 {
+        color: #fbbf24;
+        margin-bottom: 8px;
+        font-size: 22px;
+      }
+
+      .footer p {
+        color: #cbd5e1;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      
+      .footer-section {
+        flex: 1;
+      }
+      
+      .footer-section.center {
+        text-align: center;
+      }
+      
+      .footer-section.right {
+        text-align: right;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <h2>DonorConnect</h2>
+
+      <a href="/dashboard" class="menu-item"> Dashboard </a>
+      <a href="/donors" class="menu-item"> Donors </a>
+      <a href="/campaigns" class="menu-item"> Campaigns </a>
+      <a href="/reports" class="menu-item"> Reports </a>
+      <a href="/architecture" class="menu-item"> Architecture </a>
+    </div>
+
+    <div class="main">
+      <div class="header">
+        <h1>Reports Dashboard</h1>
+        <p>Analytics & Statistics</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Total Donors</h3>
+          <p>{{ total_donors }}</p>
+        </div>
+
+        <div class="card">
+          <h3>Total Donations</h3>
+          <p>₹{{ total_donations }}</p>
+        </div>
+
+        <div class="card">
+          <h3>Total Campaigns</h3>
+          <p>{{ total_campaigns }}</p>
+        </div>
+
+        <div class="card">
+          <h3>Average Donation</h3>
+          <p>₹{{ avg_donation }}</p>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="footer-content">
+          <div class="footer-section left">
+            <h3>DonorConnect</h3>
+            <p>Cloud-Based Donation & Fundraising Management Platform</p>
+          </div>
+          <div class="footer-section center">
+            <p>Built with Flask, MySQL & AWS Cloud</p>
+            <p>Secure • Scalable • Modern</p>
+          </div>
+          <div class="footer-section right">
+            <p>&copy; <span id="currentYear"></span> DonorConnect</p>
+            <p>All Rights Reserved</p>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+
+    <script>
+      // Automatically updates the copyright year
+      document.getElementById("currentYear").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

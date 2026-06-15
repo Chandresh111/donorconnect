@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Edit Donor</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f6fb;
+        padding: 40px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        margin-bottom: 25px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+
+      .btn {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .btn:hover {
+        background: #1d4ed8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Edit Donor</h1>
+
+      <form action="/update_donor/{{ donor.id }}" method="POST">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" name="name" value="{{ donor.name }}" required />
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" value="{{ donor.email }}" required />
+        </div>
+
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" name="phone" value="{{ donor.phone }}" required />
+        </div>
+
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" name="city" value="{{ donor.city }}" required />
+        </div>
+
+        <div class="form-group">
+          <label>Amount Donated</label>
+          <input
+            type="number"
+            step="0.01"
+            name="amount"
+            value="{{ donor.amount_donated }}"
+            required
+          />
+        </div>
+
+        <button class="btn">Update Donor</button>
+      </form>
+    </div>
+  </body>
+</html>

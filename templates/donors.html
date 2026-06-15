@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Donors</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        display: flex;
+        min-height: 100vh;
+        background: #f4f7fc;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: #0f172a;
+        color: white;
+        padding: 30px;
+      }
+
+      .sidebar h2 {
+        margin-bottom: 40px;
+        color: #fbbf24;
+      }
+
+      .menu-item {
+        display: block;
+        text-decoration: none;
+        color: white;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        transition: 0.3s;
+      }
+
+      .menu-item:hover {
+        background: #1e293b;
+      }
+
+      /* Main */
+      .main {
+        flex: 1;
+        padding: 30px;
+        /* Added flex column to push footer to the bottom naturally */
+        display: flex;
+        flex-direction: column; 
+      }
+
+      .header {
+        margin-bottom: 30px;
+      }
+
+      h1 {
+        color: #1e293b;
+      }
+
+      .table-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+      }
+
+      th {
+        background: #f8fafc;
+      }
+
+      .no-data {
+        text-align: center;
+        color: #64748b;
+        padding: 30px;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .add-btn {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .add-btn:hover {
+        background: #1d4ed8;
+      }
+
+      .search-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .search-btn {
+        width: 150px;
+      }
+
+      .flash {
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        color: white;
+        font-weight: bold;
+      }
+
+      .success {
+        background: #16a34a;
+      }
+
+      .danger {
+        background: #dc2626;
+      }
+
+      .info {
+        background: #2563eb;
+      }
+
+      /* Updated Footer CSS */
+      .footer {
+        margin-top: auto; /* Pushes the footer to the bottom of .main */
+        background: #0f172a;
+        color: white;
+        border-radius: 15px;
+        padding: 25px 40px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .footer h3 {
+        color: #fbbf24;
+        margin-bottom: 8px;
+        font-size: 22px;
+      }
+
+      .footer p {
+        color: #cbd5e1;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      
+      .footer-section {
+        flex: 1;
+      }
+      
+      .footer-section.center {
+        text-align: center;
+      }
+      
+      .footer-section.right {
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>DonorConnect</h2>
+
+      <a href="/dashboard" class="menu-item"> Dashboard </a>
+      <a href="/donors" class="menu-item"> Donors </a>
+      <a href="/campaigns" class="menu-item"> Campaigns </a>
+      <a href="/reports" class="menu-item"> Reports </a>
+      <a href="/architecture" class="menu-item"> Architecture </a>
+    </div>
+
+    <div class="main">
+      {% with messages = get_flashed_messages(with_categories=true) %} 
+      {% if messages %} 
+      {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %} 
+      {% endif %} 
+      {% endwith %}
+
+      <div class="header">
+        <h1>Donor Management</h1>
+      </div>
+
+      <div class="table-container">
+        <h2 style="margin-bottom: 20px">Add New Donor</h2>
+
+        <form action="/add_donor" method="POST">
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(5, 1fr);
+              gap: 15px;
+              margin-bottom: 25px;
+            "
+          >
+            <input type="text" name="name" placeholder="Name" required />
+            <input type="email" name="email" placeholder="Email" required />
+            <input type="text" name="phone" placeholder="Phone" required />
+            <input type="text" name="city" placeholder="City" required />
+            <input
+              type="number"
+              step="0.01"
+              name="amount"
+              placeholder="Amount"
+              required
+            />
+          </div>
+          <button class="add-btn">Add Donor</button>
+        </form>
+      </div>
+
+      <br />
+
+      <div class="table-container" style="margin-bottom: 30px;">
+        <form action="/donors" method="GET" class="search-box">
+          <input
+            type="text"
+            name="search"
+            placeholder="Search by name, email or city"
+            value="{{ search }}"
+          />
+          <button type="submit" class="add-btn search-btn">Search</button>
+        </form>
+
+        <table>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>City</th>
+            <th>Amount Donated</th>
+            <th>Actions</th>
+          </tr>
+
+          {% for donor in donors %}
+          <tr>
+            <td>{{ donor.id }}</td>
+            <td>{{ donor.name }}</td>
+            <td>{{ donor.email }}</td>
+            <td>{{ donor.phone }}</td>
+            <td>{{ donor.city }}</td>
+            <td>₹{{ donor.amount_donated }}</td>
+            <td>
+              <a href="/edit_donor/{{ donor.id }}"> Edit </a>
+              &nbsp;&nbsp;
+              <a
+                href="/delete_donor/{{ donor.id }}"
+                onclick="return confirm('Delete this donor?')"
+              >
+                Delete
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <footer class="footer">
+        <div class="footer-content">
+          <div class="footer-section left">
+            <h3>DonorConnect</h3>
+            <p>Cloud-Based Donation & Fundraising Management Platform</p>
+          </div>
+          <div class="footer-section center">
+            <p>Built with Flask, MySQL & AWS Cloud</p>
+            <p>Secure • Scalable • Modern</p>
+          </div>
+          <div class="footer-section right">
+            <p>&copy; <span id="currentYear"></span> DonorConnect</p>
+            <p>All Rights Reserved</p>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+    
+    <script>
+      // Automatically updates the copyright year
+      document.getElementById("currentYear").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
