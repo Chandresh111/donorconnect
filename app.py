@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from db import get_connection
 import os
 
@@ -41,6 +41,7 @@ def admin_login():
     conn.close()
 
     if admin:
+        session["admin"] = admin["admin_id"]
         return redirect(url_for("dashboard"))
 
     return render_template(
@@ -52,6 +53,9 @@ def admin_login():
 
 @app.route("/dashboard")
 def dashboard():
+
+    if "admin" not in session:
+        return redirect(url_for("login"))
 
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -102,8 +106,12 @@ def dashboard():
     recent_donations=recent_donations
 )
 
+
 @app.route("/donors")
 def donors():
+
+    if "admin" not in session:
+        return redirect(url_for("login"))
 
     search = request.args.get("search", "")
 
@@ -220,6 +228,9 @@ def edit_donor(id):
 
 @app.route("/campaigns")
 def campaigns():
+
+    if "admin" not in session:
+        return redirect(url_for("login"))
 
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -390,26 +401,12 @@ def update_campaign(id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @app.route("/architecture")
 def architecture():
+
+    if "admin" not in session:
+        return redirect(url_for("login"))
+
     return render_template("architecture.html")
 
 
@@ -452,6 +449,9 @@ def update_donor(id):
 @app.route("/reports")
 def reports():
 
+    if "admin" not in session:
+        return redirect(url_for("login"))
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -481,7 +481,17 @@ def reports():
     )
 
 
+@app.route("/logout")
+def logout():
 
+    session.clear()
+
+    flash(
+        "Logged out successfully!",
+        "info"
+    )
+
+    return redirect(url_for("login"))
 
 
 
