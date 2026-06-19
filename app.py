@@ -17,12 +17,15 @@ app.secret_key = "donorconnect_secret_key"
 def login():
     return render_template("login.html")
 
-
 @app.route("/login", methods=["POST"])
 def admin_login():
 
     admin_id = request.form.get("admin_id")
     password = request.form.get("password")
+
+    print("LOGIN ATTEMPT")
+    print("ADMIN:", admin_id)
+    print("PASSWORD:", password)
 
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -37,18 +40,22 @@ def admin_login():
 
     admin = cursor.fetchone()
 
+    print("RESULT:", admin)
+
     cursor.close()
     conn.close()
 
     if admin:
+        print("LOGIN SUCCESS")
         session["admin"] = admin["admin_id"]
         return redirect(url_for("dashboard"))
+
+    print("LOGIN FAILED")
 
     return render_template(
         "login.html",
         error="Invalid Admin ID or Password"
     )
-
 
 
 @app.route("/dashboard")
@@ -498,4 +505,4 @@ def logout():
 
 if __name__ == "__main__":
     print("RUNNING THIS APP FILE")
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5003, debug=True)
