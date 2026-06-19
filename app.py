@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import check_password_hash
+from functools import wraps
 from db import get_connection
 import os
 
@@ -10,260 +12,229 @@ app = Flask(
     )
 )
 
-app.secret_key = "donorconnect_secret_key"
+app.secret_key = os.environ.get("SECRET_KEY", "donorconnect_fallback_secret_key")
 
+# ==========================================
+# AUTHENTICATION DECORATOR
+# ==========================================
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "admin" not in session:
+            flash("Please log in to access this page.", "warning")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ==========================================
+# ROUTES
+# ==========================================
 
 @app.route("/")
 def login():
+    if "admin" in session:
+        return redirect(url_for("dashboard"))
     return render_template("login.html")
 
 @app.route("/login", methods=["POST"])
 def admin_login():
-
     admin_id = request.form.get("admin_id")
     password = request.form.get("password")
 
     print("LOGIN ATTEMPT")
     print("ADMIN:", admin_id)
-    print("PASSWORD:", password)
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
+    # LIMIT 1 prevents the "Unread result found" error if there are duplicate admins
     query = """
     SELECT * FROM admins
     WHERE admin_id = %s
-    AND password = %s
+    LIMIT 1
     """
 
-    cursor.execute(query, (admin_id, password))
-
+    cursor.execute(query, (admin_id,))
     admin = cursor.fetchone()
-
-    print("RESULT:", admin)
 
     cursor.close()
     conn.close()
 
-    if admin:
+    # Checking password in plaintext because your database uses plaintext.
+    # To upgrade to secure hashed passwords later, use:
+    # if admin and check_password_hash(admin["password"], password):
+    if admin and admin["password"] == password:
         print("LOGIN SUCCESS")
         session["admin"] = admin["admin_id"]
         return redirect(url_for("dashboard"))
 
     print("LOGIN FAILED")
-
     return render_template(
         "login.html",
         error="Invalid Admin ID or Password"
     )
 
-
 @app.route("/dashboard")
+@login_required
 def dashboard():
-
-    if "admin" not in session:
-        return redirect(url_for("login"))
-
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
-    
-
-    # Total donors
-    cursor.execute(
-        "SELECT COUNT(*) AS total FROM donors"
-    )
-
+    cursor.execute("SELECT COUNT(*) AS total FROM donors")
     total_donors = cursor.fetchone()["total"]
 
-    # Total donations
-    cursor.execute(
-        "SELECT SUM(amount_donated)AS total FROM donors"
-    )
+    cursor.execute("SELECT SUM(amount_donated) AS total FROM donors")
+    result = cursor.fetchone()
+    total_donations = result["total"] if result["total"] else 0
 
-    total_donations = cursor.fetchone()["total"]
-
-    #Total Campaign
-    cursor.execute(
-    "SELECT COUNT(*) AS total FROM campaigns"
-    )
-
+    cursor.execute("SELECT COUNT(*) AS total FROM campaigns")
     total_campaigns = cursor.fetchone()["total"]
 
-    if total_donations is None:
-        total_donations = 0
-
     cursor.execute("""
-    SELECT name, amount_donated
-    FROM donors
-    ORDER BY id DESC
-    LIMIT 5
+        SELECT name, amount_donated
+        FROM donors
+        ORDER BY id DESC
+        LIMIT 5
     """)
-
     recent_donations = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
     return render_template(
-    "dashboard.html",
-    total_donors=total_donors,
-    total_donations=total_donations,
-    total_campaigns=total_campaigns,
-    recent_donations=recent_donations
-)
-
+        "dashboard.html",
+        total_donors=total_donors,
+        total_donations=total_donations,
+        total_campaigns=total_campaigns,
+        recent_donations=recent_donations
+    )
 
 @app.route("/donors")
+@login_required
 def donors():
-
-    if "admin" not in session:
-        return redirect(url_for("login"))
-
     search = request.args.get("search", "")
-
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     if search:
-
         cursor.execute("""
-            SELECT *
-            FROM donors
-            WHERE name LIKE %s
-               OR email LIKE %s
-               OR city LIKE %s
-        """, (
-            f"%{search}%",
-            f"%{search}%",
-            f"%{search}%"
-        ))
-
+            SELECT * FROM donors
+            WHERE name LIKE %s OR email LIKE %s OR city LIKE %s
+        """, (f"%{search}%", f"%{search}%", f"%{search}%"))
     else:
-
         cursor.execute("SELECT * FROM donors")
 
     donors_data = cursor.fetchall()
-
     cursor.close()
     conn.close()
 
-    return render_template(
-        "donors.html",
-        donors=donors_data,
-        search=search
-    )
-
-
+    return render_template("donors.html", donors=donors_data, search=search)
 
 @app.route("/add_donor", methods=["POST"])
+@login_required
 def add_donor():
-
-    print("ADD DONOR ROUTE HIT")
-
     name = request.form.get("name")
     email = request.form.get("email")
     phone = request.form.get("phone")
     city = request.form.get("city")
     amount = request.form.get("amount")
     
-
-    print(name, email, phone, city, amount)
-    
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     cursor.execute(
         """
-        INSERT INTO donors
-        (name,email,phone,city,amount_donated)
-        VALUES(%s,%s,%s,%s,%s)
+        INSERT INTO donors (name, email, phone, city, amount_donated)
+        VALUES (%s, %s, %s, %s, %s)
         """,
-        (name,email,phone,city,amount)
+        (name, email, phone, city, amount)
     )
     conn.commit()
-
     cursor.close()
     conn.close()
+    
     flash("Donor added successfully!", "success")
-
     return redirect(url_for("donors"))
-
 
 @app.route("/delete_donor/<int:id>")
+@login_required
 def delete_donor(id):
-
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
-    cursor.execute(
-        "DELETE FROM donors WHERE id = %s",
-        (id,)
-    )
-
+    cursor.execute("DELETE FROM donors WHERE id = %s", (id,))
     conn.commit()
-
     cursor.close()
     conn.close()
+    
     flash("Donor deleted successfully!", "danger")
-
     return redirect(url_for("donors"))
 
-
 @app.route("/edit_donor/<int:id>")
+@login_required
 def edit_donor(id):
-
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
-    cursor.execute(
-        "SELECT * FROM donors WHERE id = %s",
-        (id,)
-    )
-
+    cursor.execute("SELECT * FROM donors WHERE id = %s", (id,))
     donor = cursor.fetchone()
-
     cursor.close()
     conn.close()
 
-    return render_template(
-    "edit_donor.html",
-    donor=donor
-)
+    return render_template("edit_donor.html", donor=donor)
 
-
-
-@app.route("/campaigns")
-def campaigns():
-
-    if "admin" not in session:
-        return redirect(url_for("login"))
+@app.route("/update_donor/<int:id>", methods=["POST"])
+@login_required
+def update_donor(id):
+    name = request.form.get("name")
+    email = request.form.get("email")
+    phone = request.form.get("phone")
+    city = request.form.get("city")
+    amount = request.form.get("amount")
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(buffered=True)
+
+    cursor.execute(
+        """
+        UPDATE donors
+        SET name = %s, email = %s, phone = %s, city = %s, amount_donated = %s
+        WHERE id = %s
+        """,
+        (name, email, phone, city, amount, id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash("Donor updated successfully!", "info")
+    return redirect(url_for("donors"))
+
+@app.route("/campaigns")
+@login_required
+def campaigns():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     cursor.execute("SELECT * FROM campaigns")
-
     campaigns_data = cursor.fetchall()
     
     for campaign in campaigns_data:
-        campaign["percentage"] = (
-            campaign["raised_amount"] / campaign["target_amount"]
+        if campaign["target_amount"] and campaign["target_amount"] > 0:
+            campaign["percentage"] = (
+                float(campaign["raised_amount"]) / float(campaign["target_amount"])
             ) * 100
+        else:
+            campaign["percentage"] = 0
 
     cursor.close()
     conn.close()
 
-    return render_template(
-        "campaigns.html",
-        campaigns=campaigns_data
-    )
-
-
+    return render_template("campaigns.html", campaigns=campaigns_data)
 
 @app.route("/add_campaign", methods=["POST"])
+@login_required
 def add_campaign():
-
     title = request.form.get("title")
     description = request.form.get("description")
     target_amount = request.form.get("target_amount")
@@ -271,100 +242,52 @@ def add_campaign():
     end_date = request.form.get("end_date")
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     cursor.execute(
         """
-        INSERT INTO campaigns
-        (
-            title,
-            description,
-            target_amount,
-            raised_amount,
-            start_date,
-            end_date
-        )
-        VALUES(%s,%s,%s,%s,%s,%s)
+        INSERT INTO campaigns (title, description, target_amount, raised_amount, start_date, end_date)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """,
-        (
-            title,
-            description,
-            target_amount,
-            0,
-            start_date,
-            end_date
-        )
+        (title, description, target_amount, 0, start_date, end_date)
     )
-
     conn.commit()
-
     cursor.close()
     conn.close()
 
-    flash(
-        "Campaign added successfully!",
-        "success"
-    )
-
-    return redirect(
-        url_for("campaigns")
-    )
-
-
-
+    flash("Campaign added successfully!", "success")
+    return redirect(url_for("campaigns"))
 
 @app.route("/delete_campaign/<int:id>")
+@login_required
 def delete_campaign(id):
-
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
-    cursor.execute(
-        "DELETE FROM campaigns WHERE id=%s",
-        (id,)
-    )
-
+    cursor.execute("DELETE FROM campaigns WHERE id=%s", (id,))
     conn.commit()
-
     cursor.close()
     conn.close()
 
-    flash(
-        "Campaign deleted successfully!",
-        "danger"
-    )
-
-    return redirect(
-        url_for("campaigns")
-    )
-
+    flash("Campaign deleted successfully!", "danger")
+    return redirect(url_for("campaigns"))
 
 @app.route("/edit_campaign/<int:id>")
+@login_required
 def edit_campaign(id):
-
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
-    cursor.execute(
-        "SELECT * FROM campaigns WHERE id=%s",
-        (id,)
-    )
-
+    cursor.execute("SELECT * FROM campaigns WHERE id=%s", (id,))
     campaign = cursor.fetchone()
-
     cursor.close()
     conn.close()
 
-    return render_template(
-        "edit_campaign.html",
-        campaign=campaign
-    )
-
-
+    return render_template("edit_campaign.html", campaign=campaign)
 
 @app.route("/update_campaign/<int:id>", methods=["POST"])
+@login_required
 def update_campaign(id):
-
     title = request.form.get("title")
     description = request.form.get("description")
     target_amount = request.form.get("target_amount")
@@ -373,106 +296,43 @@ def update_campaign(id):
     end_date = request.form.get("end_date")
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     cursor.execute(
         """
         UPDATE campaigns
-        SET
-            title=%s,
-            description=%s,
-            target_amount=%s,
-            raised_amount=%s,
-            start_date=%s,
-            end_date=%s
+        SET title=%s, description=%s, target_amount=%s, raised_amount=%s, start_date=%s, end_date=%s
         WHERE id=%s
         """,
-        (
-            title,
-            description,
-            target_amount,
-            raised_amount,
-            start_date,
-            end_date,
-            id
-        )
+        (title, description, target_amount, raised_amount, start_date, end_date, id)
     )
-
     conn.commit()
-
     cursor.close()
     conn.close()
 
     return redirect(url_for("campaigns"))
 
-
-
-
 @app.route("/architecture")
+@login_required
 def architecture():
-
-    if "admin" not in session:
-        return redirect(url_for("login"))
-
     return render_template("architecture.html")
 
-
-@app.route("/update_donor/<int:id>", methods=["POST"])
-def update_donor(id):
-
-    name = request.form.get("name")
-    email = request.form.get("email")
-    phone = request.form.get("phone")
-    city = request.form.get("city")
-    amount = request.form.get("amount")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        UPDATE donors
-        SET
-            name = %s,
-            email = %s,
-            phone = %s,
-            city = %s,
-            amount_donated = %s
-        WHERE id = %s
-        """,
-        (name, email, phone, city, amount, id)
-    )
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-    flash("Donor updated successfully!", "info")
-
-    return redirect(url_for("donors"))
-
-
-
 @app.route("/reports")
+@login_required
 def reports():
-
-    if "admin" not in session:
-        return redirect(url_for("login"))
-
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     cursor.execute("SELECT COUNT(*) FROM donors")
     total_donors = cursor.fetchone()[0]
 
     cursor.execute("SELECT SUM(amount_donated) FROM donors")
-    total_donations = cursor.fetchone()[0]
+    total_donations = cursor.fetchone()[0] or 0
 
     cursor.execute("SELECT COUNT(*) FROM campaigns")
     total_campaigns = cursor.fetchone()[0]
 
     avg_donation = 0
-
     if total_donors > 0:
         avg_donation = total_donations / total_donors
 
@@ -487,21 +347,11 @@ def reports():
         avg_donation=avg_donation
     )
 
-
 @app.route("/logout")
 def logout():
-
     session.clear()
-
-    flash(
-        "Logged out successfully!",
-        "info"
-    )
-
+    flash("Logged out successfully!", "info")
     return redirect(url_for("login"))
-
-
-
 
 if __name__ == "__main__":
     print("RUNNING THIS APP FILE")
